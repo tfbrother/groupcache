@@ -1,0 +1,243 @@
+@startuml
+namespace github.com\\tfbrother\\groupcache {
+ class ByteView {
+  b []byte
+  s string
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\consistenthash {
+ class Map {
+  hash Hash
+  replicas int
+  keys []int
+  hashMap map[int]string
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class Group {
+  name string
+  getter Getter
+  peersOnce sync.Once
+  peers PeerPicker
+  cacheBytes int64
+  mainCache cache
+  hotCache cache
+  loadGroup singleflight.Group
+  Stats Stats
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class Stats {
+  Gets AtomicInt
+  CacheHits AtomicInt
+  PeerLoads AtomicInt
+  PeerErrors AtomicInt
+  Loads AtomicInt
+  LoadsDeduped AtomicInt
+  LocalLoads AtomicInt
+  LocalLoadErrs AtomicInt
+  ServerRequests AtomicInt
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class cache {
+  mu sync.RWMutex
+  nbytes int64
+  lru *lru.Cache
+  nhit,nget int64
+  nevict int64
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class CacheStats {
+  Bytes int64
+  Items int64
+  Gets int64
+  Hits int64
+  Evictions int64
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\groupcachepb {
+ class GetRequest {
+  Group *string
+  Key *string
+  XXX_unrecognized []byte
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\groupcachepb {
+ class GetResponse {
+  Value []byte
+  MinuteQps *float64
+  XXX_unrecognized []byte
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class HTTPPool {
+  Context func(*http.Request)Context
+  Transport func(Context)http.RoundTripper
+  basePath string
+  self string
+  mu sync.Mutex
+  peers *consistenthash.Map
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class httpGetter {
+  transport func(Context)http.RoundTripper
+  baseURL string
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\lru {
+ class Cache {
+  MaxEntries int
+  OnEvicted func(key Key,value interface  { })
+  ll *list.List
+  cache map[interface  { }]*list.Element
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\lru {
+ class entry {
+  key Key
+  value interface  { }
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class NoPeers {
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\singleflight {
+ class call {
+  wg sync.WaitGroup
+  val interface  { }
+  err error
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\singleflight {
+ class Group {
+  mu sync.Mutex
+  m map[string]*call
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class stringSink {
+  sp *string
+  v ByteView
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class byteViewSink {
+  dst *ByteView
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class protoSink {
+  dst proto.Message
+  typ string
+  v ByteView
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class allocBytesSink {
+  dst *[]byte
+  v ByteView
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ class truncBytesSink {
+  dst *[]byte
+  v ByteView
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ interface Getter  {
+  Get(ctx Context,key string,dest Sink)error
+} 
+}
+namespace github.com\\tfbrother\\groupcache\\lru {
+ interface Key  {
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ interface Context  {
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ interface ProtoGetter  {
+  Get(context Context,in *pb.GetRequest,out *pb.GetResponse)error
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ interface PeerPicker  {
+  PickPeer(key string)(peer ProtoGetter,ok bool)
+} 
+}
+namespace github.com\\tfbrother\\groupcache {
+ interface Sink  {
+  SetString(s string)error
+  SetBytes(v []byte)error
+  SetProto(m proto.Message)error
+  view()(ByteView,error)
+} 
+}
+github.com\\tfbrother\\groupcache.Group ---> github.com\\tfbrother\\groupcache.cache : mainCache
+github.com\\tfbrother\\groupcache.Group ---> github.com\\tfbrother\\groupcache.cache : hotCache
+github.com\\tfbrother\\groupcache.Group ---> github.com\\tfbrother\\groupcache\\singleflight.Group : loadGroup
+github.com\\tfbrother\\groupcache.Group ---> github.com\\tfbrother\\groupcache.Stats : Stats
+github.com\\tfbrother\\groupcache.cache ---> github.com\\tfbrother\\groupcache\\lru.Cache : lru
+github.com\\tfbrother\\groupcache.HTTPPool ---> github.com\\tfbrother\\groupcache\\consistenthash.Map : peers
+github.com\\tfbrother\\groupcache\\singleflight.Group ---> "*" github.com\\tfbrother\\groupcache\\singleflight.call : m
+github.com\\tfbrother\\groupcache.stringSink ---> github.com\\tfbrother\\groupcache.ByteView : v
+github.com\\tfbrother\\groupcache.byteViewSink ---> github.com\\tfbrother\\groupcache.ByteView : dst
+github.com\\tfbrother\\groupcache.protoSink ---> github.com\\tfbrother\\groupcache.ByteView : v
+github.com\\tfbrother\\groupcache.allocBytesSink ---> github.com\\tfbrother\\groupcache.ByteView : v
+github.com\\tfbrother\\groupcache.truncBytesSink ---> github.com\\tfbrother\\groupcache.ByteView : v
+github.com\\tfbrother\\groupcache.Getter <|- github.com\\tfbrother\\groupcache.Group
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.ByteView
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache\\consistenthash.Map
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.Group
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.Stats
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.cache
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.CacheStats
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache\\groupcachepb.GetRequest
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache\\groupcachepb.GetResponse
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.HTTPPool
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.httpGetter
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache\\lru.Cache
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache\\lru.entry
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.NoPeers
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache\\singleflight.call
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache\\singleflight.Group
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.stringSink
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.byteViewSink
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.protoSink
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.allocBytesSink
+github.com\\tfbrother\\groupcache\\lru.Key <|- github.com\\tfbrother\\groupcache.truncBytesSink
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.ByteView
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache\\consistenthash.Map
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.Group
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.Stats
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.cache
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.CacheStats
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache\\groupcachepb.GetRequest
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache\\groupcachepb.GetResponse
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.HTTPPool
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.httpGetter
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache\\lru.Cache
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache\\lru.entry
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.NoPeers
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache\\singleflight.call
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache\\singleflight.Group
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.stringSink
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.byteViewSink
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.protoSink
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.allocBytesSink
+github.com\\tfbrother\\groupcache.Context <|- github.com\\tfbrother\\groupcache.truncBytesSink
+github.com\\tfbrother\\groupcache.ProtoGetter <|- github.com\\tfbrother\\groupcache.httpGetter
+github.com\\tfbrother\\groupcache.PeerPicker <|- github.com\\tfbrother\\groupcache.HTTPPool
+github.com\\tfbrother\\groupcache.PeerPicker <|- github.com\\tfbrother\\groupcache.NoPeers
+github.com\\tfbrother\\groupcache.Sink <|- github.com\\tfbrother\\groupcache.stringSink
+github.com\\tfbrother\\groupcache.Sink <|- github.com\\tfbrother\\groupcache.byteViewSink
+github.com\\tfbrother\\groupcache.Sink <|- github.com\\tfbrother\\groupcache.protoSink
+github.com\\tfbrother\\groupcache.Sink <|- github.com\\tfbrother\\groupcache.allocBytesSink
+github.com\\tfbrother\\groupcache.Sink <|- github.com\\tfbrother\\groupcache.truncBytesSink
+@enduml

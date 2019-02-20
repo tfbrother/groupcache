@@ -1,0 +1,6 @@
+1.https://groups.google.com/forum/#!topic/golang-nuts/yrlg0DNeGKA
+2.http://talks.golang.org/2013/oscon-dl/groupcache.go
+3.介绍一下groupcache实现和使用
+	http://orangeholic.iteye.com/blog/2257245
+4.groupcache的设计和实现分析
+	http://blog.csdn.net/npc_hp110/article/details/48036765
